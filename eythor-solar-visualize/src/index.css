@@ -1,0 +1,133 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 100%;
+    
+    --popover: 0 0% 0%;
+    --popover-foreground: 0 0% 100%;
+    
+    --primary: 211 100% 45%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 0 0% 100%;
+    --secondary-foreground: 0 0% 0%;
+    
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 80%;
+    
+    --accent: 211 100% 45%;
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 211 100% 45%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border selection:bg-eythor-blue/20 selection:text-white;
+  }
+  
+  body {
+    @apply bg-black text-white font-sans antialiased;
+    background-image: 
+      radial-gradient(circle at 25% 10%, rgba(0, 113, 227, 0.03) 0%, transparent 50%),
+      radial-gradient(circle at 75% 90%, rgba(0, 113, 227, 0.03) 0%, transparent 50%),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.99), rgba(0, 0, 0, 0.99)), 
+      url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230071E3' fill-opacity='0.03'%3E%3Cpath d='M50 50c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10s-10-4.477-10-10 4.477-10 10-10zM10 10c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10S0 25.523 0 20s4.477-10 10-10zm10 8c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8zm40 40c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8z' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    @apply backdrop-blur-md bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 shadow-xl;
+  }
+  
+  .tech-card {
+    @apply bg-gradient-to-br from-black/80 to-black/60 border border-white/5 rounded-xl shadow-lg hover:shadow-glow-blue transition-all duration-300;
+  }
+  
+  .neon-glow {
+    @apply shadow-glow-blue;
+  }
+  
+  .neon-glow-white {
+    @apply shadow-glow-black;
+  }
+  
+  .text-gradient {
+    @apply bg-gradient-to-r from-eythor-blue to-white bg-clip-text text-transparent;
+  }
+  
+  .text-gradient-blue {
+    @apply bg-gradient-to-r from-eythor-blue to-eythor-blue/70 bg-clip-text text-transparent;
+  }
+  
+  .text-gradient-white {
+    @apply bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent;
+  }
+  
+  .cta-button {
+    @apply bg-gradient-to-r from-eythor-blue to-eythor-blue/90 text-white px-6 py-3 rounded-md font-medium 
+    hover:shadow-glow-blue transition-all duration-300 relative overflow-hidden
+    after:content-[''] after:absolute after:inset-0 after:bg-gradient-to-r after:from-transparent 
+    after:via-white/10 after:to-transparent after:translate-x-[-200%] hover:after:translate-x-[200%] 
+    after:transition-all after:duration-1000 after:ease-in-out;
+  }
+  
+  .secondary-button {
+    @apply border border-white/20 bg-black/40 hover:bg-white/5 text-white px-6 py-3 rounded-md font-medium 
+    transition-all duration-300 hover:border-white/30;
+  }
+  
+  .tech-shape {
+    @apply absolute w-40 h-40 bg-eythor-blue/5 rounded-[40%] rotate-45 blur-3xl;
+  }
+  
+  .tech-shape-white {
+    @apply absolute w-40 h-40 bg-white/5 rounded-[40%] rotate-45 blur-3xl;
+  }
+  
+  .feature-icon {
+    @apply bg-gradient-to-br from-eythor-blue/20 to-eythor-blue/5 p-3.5 rounded-xl text-eythor-blue;
+  }
+  
+  .feature-icon-white {
+    @apply bg-gradient-to-br from-white/10 to-white/5 p-3.5 rounded-xl text-white;
+  }
+  
+  .shimmer {
+    @apply relative overflow-hidden before:absolute before:inset-0 before:w-[200%] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent before:animate-shimmer;
+  }
+  
+  .nav-link {
+    @apply text-white/80 hover:text-eythor-blue transition-colors relative font-medium;
+  }
+  
+  .nav-link-active {
+    @apply text-eythor-blue font-semibold after:content-[''] after:absolute after:bottom-[-5px] after:left-0 after:w-full after:h-0.5 after:bg-eythor-blue/50 after:rounded-full;
+  }
+  
+  .nav-link-hover {
+    @apply hover:after:content-[''] hover:after:absolute hover:after:bottom-[-5px] hover:after:left-0 hover:after:w-full hover:after:h-0.5 hover:after:bg-eythor-blue/30 hover:after:rounded-full after:transition-all after:duration-300;
+  }
+}
