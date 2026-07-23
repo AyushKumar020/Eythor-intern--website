@@ -35,18 +35,12 @@ const SolarQuote = () => {
       
       <div className="relative">
         <div className="absolute inset-0 z-0">
-          <VideoBackground src="/lovable-uploads/landing.mp4" className="h-full" />
+          <img src="/background image buy now page.jpeg" alt="Background" className="w-full h-full object-cover opacity-50" />
         </div>
         
         <div className="absolute top-40 left-10 w-72 h-72 bg-eythor-blue/5 rounded-full blur-[100px] animate-pulse pointer-events-none z-[1]"></div>
         <div className="absolute bottom-40 right-10 w-96 h-96 bg-white/[0.02] rounded-full blur-[120px] animate-pulse pointer-events-none z-[1]" style={{ animationDelay: '1s' }}></div>
         
-        <button 
-          onClick={() => navigate(-1)}
-          className="fixed left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/5 border border-white/10 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-300 backdrop-blur-sm"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
         
         <main className="relative z-10 pt-24 pb-16 px-4">
           <div className="container mx-auto max-w-4xl px-4">
@@ -59,7 +53,7 @@ const SolarQuote = () => {
                   { num: 3, label: 'Configure', key: 3 },
                   { num: 4, label: 'Summary', key: 4 },
                 ].map((item, index) => {
-                  const isCompleted = item.num <= 2;
+                  const isCompleted = item.num === 1;
                   const isActive = item.num === 1;
 
                   return (
@@ -119,7 +113,7 @@ const SolarQuote = () => {
                           placeholder="Full Name" 
                           value={formData.name} 
                           onChange={handleInputChange} 
-                          className="bg-transparent text-white placeholder:text-white/40 text-sm w-full outline-none" 
+                          className="bg-transparent text-white placeholder:text-white/40 text-base w-full outline-none"
                         />
                       </div>
                       <div className="group/input bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-3 hover:border-eythor-blue/50 hover:bg-white/10 transition-all duration-300">
@@ -130,7 +124,7 @@ const SolarQuote = () => {
                           placeholder="Email ID" 
                           value={formData.email} 
                           onChange={handleInputChange} 
-                          className="bg-transparent text-white placeholder:text-white/40 text-sm w-full outline-none" 
+                          className="bg-transparent text-white placeholder:text-white/40 text-base w-full outline-none"
                         />
                       </div>
                     </div>
@@ -144,7 +138,7 @@ const SolarQuote = () => {
                           placeholder="Phone Number" 
                           value={formData.phone} 
                           onChange={handleInputChange} 
-                          className="bg-transparent text-white placeholder:text-white/40 text-sm w-full outline-none" 
+                          className="bg-transparent text-white placeholder:text-white/40 text-base w-full outline-none" 
                         />
                       </div>
                       <div className="group/input bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-3 hover:border-eythor-blue/50 hover:bg-white/10 transition-all duration-300">
@@ -155,7 +149,7 @@ const SolarQuote = () => {
                           placeholder="Kilowatts Required" 
                           value={formData.kilowatts} 
                           onChange={handleInputChange} 
-                          className="bg-transparent text-white placeholder:text-white/40 text-sm w-full outline-none" 
+                          className="bg-transparent text-white placeholder:text-white/40 text-base w-full outline-none"
                         />
                       </div>
                     </div>
@@ -259,13 +253,6 @@ const SolarQuote = () => {
           </div>
         </main>
 
-        <button 
-          onClick={() => navigate('/buynow')}
-          disabled={!isFormValid()}
-          className="fixed right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/5 border border-white/20 rounded-full flex items-center justify-center text-white hover:bg-white/10 hover:border-white/30 transition-all duration-300 backdrop-blur-sm disabled:opacity-30 disabled:cursor-not-allowed"
-        >
-          <ArrowRight className="w-5 h-5" />
-        </button>
       </div>
 
       <Footer />
