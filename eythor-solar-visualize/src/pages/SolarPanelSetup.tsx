@@ -593,7 +593,7 @@ const SolarPanelSetup = () => {
                                         <img
                                           src={uploadedForAngle[0].preview}
                                           alt={angle.label}
-                                          className="w-full h-24 object-cover rounded-lg"
+                                          className="w-full h-48 object-contain rounded-lg"
                                         />
                                         <div className="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2 rounded-lg">
                                           <Button
