@@ -130,4 +130,26 @@
   .nav-link-hover {
     @apply hover:after:content-[''] hover:after:absolute hover:after:bottom-[-5px] hover:after:left-0 hover:after:w-full hover:after:h-0.5 hover:after:bg-eythor-blue/30 hover:after:rounded-full after:transition-all after:duration-300;
   }
+  
+  .animate-fadeIn {
+    @apply animate-in fade-in duration-300;
+  }
+  
+  .animate-slide-in-right {
+    animation: slideInRight 0.4s ease-out;
+  }
+  
+  .animate-slide-in-left {
+    animation: slideInLeft 0.4s ease-out;
+  }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
 }
