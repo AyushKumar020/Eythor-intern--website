@@ -29,7 +29,7 @@ interface UploadedImage {
 }
 
 const MAX_GRID_ROWS = 5;
-const MAX_GRID_COLS = 30;
+const MAX_GRID_COLS = 40;
 
 const SolarPanelSetup = () => {
   const navigate = useNavigate();
@@ -41,6 +41,7 @@ const SolarPanelSetup = () => {
   const [rows, setRows] = useState('');
   const [columns, setColumns] = useState('');
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
+  const selectedAngleRef = useRef<string>('Top View');
   const [totalPanels, setTotalPanels] = useState(0);
   const [selectedPanel, setSelectedPanel] = useState<SolarPanel | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -96,33 +97,30 @@ const SolarPanelSetup = () => {
     goToStep(2);
   };
 
+  const handleAngleUploadClick = (angleLabel: string) => {
+    selectedAngleRef.current = angleLabel;
+    fileInputRef.current?.click();
+  };
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files) return;
+    if (!files || files.length === 0) return;
 
-    const newImages: UploadedImage[] = [];
-    const labels = ['Top View', 'Front View', 'Side View', 'Back View', 'Additional Angle'];
+    const file = files[0];
+    const preview = URL.createObjectURL(file);
 
-    Array.from(files).forEach((file, index) => {
-      if (uploadedImages.length + newImages.length >= 6) {
-        toast({
-          title: 'Max Images Reached',
-          description: 'You can upload up to 6 images.',
-          variant: 'destructive',
-        });
-        return;
-      }
+    const angle = selectedAngleRef.current;
+    // Remove any existing image for this angle
+    const filtered = uploadedImages.filter(img => img.label !== angle);
+    
+    const newImage: UploadedImage = {
+      id: `img-${Date.now()}`,
+      file,
+      preview,
+      label: angle,
+    };
 
-      const preview = URL.createObjectURL(file);
-      newImages.push({
-        id: `img-${Date.now()}-${index}`,
-        file,
-        preview,
-        label: labels[uploadedImages.length + newImages.length - 1] || 'Additional View',
-      });
-    });
-
-    setUploadedImages(prev => [...prev, ...newImages]);
+    setUploadedImages([...filtered, newImage]);
     
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -263,7 +261,7 @@ const SolarPanelSetup = () => {
         </button>
         
         <main className="relative z-10 pt-24 pb-16 px-4">
-          <div className="container mx-auto max-w-2xl">
+          <div className="container mx-auto max-w-5xl">
             <div className="mb-8">
               <div className="flex items-center justify-center gap-0">
                 {[
@@ -357,11 +355,11 @@ const SolarPanelSetup = () => {
 
                         <div className="bg-white/[0.02] border border-white/10 rounded-xl p-4">
                           <div className="text-center mb-3">
-                            <span className="text-xs text-white/40">Max Grid: 5 rows × 30 columns</span>
+                              <span className="text-xs text-white/40">Max Grid: 5 rows × 40 columns</span>
                           </div>
                           <div className="overflow-x-auto">
                             <div 
-                              className="grid gap-[2px] mx-auto min-w-fit"
+                              className="grid gap-1 mx-auto min-w-fit"
                               style={{
                                 gridTemplateColumns: `repeat(${MAX_GRID_COLS}, minmax(0, 1fr))`,
                               }}
@@ -370,10 +368,10 @@ const SolarPanelSetup = () => {
                                 row.map((cell, ci) => (
                                   <div
                                     key={`${ri}-${ci}`}
-                                    className={`w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-sm border transition-all duration-200 ${
+                                    className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-sm transition-all duration-200 ${
                                       cell
-                                        ? 'bg-eythor-blue/40 border-eythor-blue/60 shadow-[0_0_6px_rgba(59,130,246,0.4)]'
-                                        : 'bg-white/[0.03] border-white/5'
+                                        ? 'bg-eythor-blue/60 shadow-[0_0_8px_rgba(59,130,246,0.5)]'
+                                        : 'bg-white/[0.04]'
                                     }`}
                                     title={`Row ${ri + 1}, Col ${ci + 1}`}
                                   />
@@ -411,7 +409,7 @@ const SolarPanelSetup = () => {
                               type="number"
                               min="1"
                               max={MAX_GRID_COLS}
-                              placeholder={`Max ${MAX_GRID_COLS} columns`}
+                               placeholder={`Max ${MAX_GRID_COLS} columns`}
                               value={columns}
                               onChange={(e) => setColumns(e.target.value)}
                               className="bg-white/[0.03] border-white/10 text-white placeholder:text-white/30 
@@ -582,7 +580,7 @@ const SolarPanelSetup = () => {
                             return (
                               <div key={angle.key}>
                                 <div 
-                                  onClick={() => !hasImage && fileInputRef.current?.click()}
+                                  onClick={() => handleAngleUploadClick(angle.label.replace('Upload ', ''))}
                                   className="border border-white/10 rounded-xl p-6 text-center cursor-pointer hover:border-white/20 transition-all duration-300 group min-h-[200px] flex flex-col items-center justify-center"
                                 >
                                   <div className="mb-4">
@@ -698,19 +696,33 @@ const SolarPanelSetup = () => {
 
                     {step === 3 && (
                       <div className="space-y-6">
-                        {renderTableBadge()}
-                        
-                        <div className="text-center mb-6">
-                          <div className="inline-flex items-center gap-2 px-3 py-1 bg-eythor-blue/10 rounded-full mb-4">
+                        {/* Top row: Heading left, How to use button right */}
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h2 className="text-3xl md:text-4xl font-bold">
+                              <span className="text-gradient-blue">Identify Your Solar Panel</span>
+                            </h2>
+                            <p className="text-white/50 text-sm mt-1">
+                              Upload a photo of the sticker label on your panel (JPEG) or enter the model name manually
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => navigate('/solar-panel-guide')}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 hover:border-white/20 transition-all duration-300 group flex-shrink-0"
+                          >
+                            <PlayCircle className="w-3.5 h-3.5 text-white/50 group-hover:text-eythor-blue transition-colors" />
+                            <span className="text-[11px] text-white/50 group-hover:text-eythor-blue transition-colors">How to use?</span>
+                          </button>
+                        </div>
+
+                        {/* Table badge and Model Identification icon just below heading */}
+                        <div className="flex items-center gap-2">
+                          {renderTableBadge()}
+                          <div className="inline-flex items-center gap-2 px-3 py-1 bg-eythor-blue/10 rounded-full">
                             <Cpu className="w-3.5 h-3.5 text-eythor-blue" />
                             <span className="text-xs font-medium text-eythor-blue tracking-wider uppercase">Solar Panel Model Identification</span>
                           </div>
-                          <h2 className="text-3xl md:text-4xl font-bold mb-2">
-                            <span className="text-gradient-blue">Identify Your Solar Panel</span>
-                          </h2>
-                          <p className="text-white/50 text-sm max-w-md mx-auto">
-                            Upload a photo of the sticker label on your panel (JPEG) or enter the model name manually
-                          </p>
                         </div>
 
                         <div className="relative py-2">
@@ -892,12 +904,12 @@ const SolarPanelSetup = () => {
                           )}
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                          <div className="bg-eythor-blue/5 border border-eythor-blue/20 rounded-xl p-5 text-center">
-                            <div className="text-4xl font-bold text-eythor-blue mb-1">
+                        <div className="flex justify-center">
+                          <div className="bg-eythor-blue/5 border border-eythor-blue/20 rounded-xl p-8 text-center max-w-sm w-full">
+                            <div className="text-6xl font-bold text-eythor-blue mb-2">
                               {totalPanels}
                             </div>
-                            <p className="text-white/60 text-sm">Total Solar Panels</p>
+                            <p className="text-white/60 text-base">Total Solar Panels</p>
                           </div>
                         </div>
 
