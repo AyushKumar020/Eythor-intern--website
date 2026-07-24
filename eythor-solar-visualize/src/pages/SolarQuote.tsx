@@ -21,11 +21,24 @@ const SolarQuote = () => {
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    if (name === 'phone') {
+      const numericValue = value.replace(/\D/g, '');
+      setFormData({ ...formData, phone: numericValue });
+    } else if (name === 'kilowatts') {
+      const numericValue = value.replace(/[^0-9]/g, '');
+      setFormData({ ...formData, kilowatts: numericValue });
+    } else if (name === 'pinCode') {
+      const numericValue = value.replace(/\D/g, '').slice(0, 6);
+      setFormData({ ...formData, pinCode: numericValue });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const isFormValid = () => {
-    return formData.name && formData.email && formData.phone && formData.kilowatts && 
+    return formData.name && formData.email && formData.phone && 
            formData.pinCode && formData.houseNumber && formData.streetAddress && formData.city && formData.state;
   };
 
@@ -160,18 +173,6 @@ const SolarQuote = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="group/input bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-3 hover:border-eythor-blue/50 hover:bg-white/10 transition-all duration-300">
-                        <MapPin className="w-5 h-5 text-eythor-blue/70 group-hover/input:text-eythor-blue transition-colors" />
-                        <input 
-                          type="text" 
-                          name="pinCode" 
-                          placeholder="8-Digit Pin Code" 
-                          value={formData.pinCode} 
-                          onChange={handleInputChange} 
-                          maxLength={8} 
-                          className="bg-transparent text-white placeholder:text-white/40 text-sm w-full outline-none" 
-                        />
-                      </div>
-                      <div className="group/input bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-3 hover:border-eythor-blue/50 hover:bg-white/10 transition-all duration-300">
                         <Home className="w-5 h-5 text-eythor-blue/70 group-hover/input:text-eythor-blue transition-colors" />
                         <input 
                           type="text" 
@@ -179,6 +180,18 @@ const SolarQuote = () => {
                           placeholder="House / Flat Number" 
                           value={formData.houseNumber} 
                           onChange={handleInputChange} 
+                          className="bg-transparent text-white placeholder:text-white/40 text-sm w-full outline-none" 
+                        />
+                      </div>
+                      <div className="group/input bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-3 hover:border-eythor-blue/50 hover:bg-white/10 transition-all duration-300">
+                        <MapPin className="w-5 h-5 text-eythor-blue/70 group-hover/input:text-eythor-blue transition-colors" />
+                        <input 
+                          type="text" 
+                          name="pinCode" 
+                          placeholder="6-Digit Pin Code" 
+                          value={formData.pinCode} 
+                          onChange={handleInputChange} 
+                          maxLength={6} 
                           className="bg-transparent text-white placeholder:text-white/40 text-sm w-full outline-none" 
                         />
                       </div>
@@ -209,14 +222,14 @@ const SolarQuote = () => {
                         />
                       </div>
                       <div className="group/input bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-3 hover:border-eythor-blue/50 hover:bg-white/10 transition-all duration-300">
-                        <MapPin className="w-5 h-5 text-eythor-blue/70 group-hover/input:text-eythor-blue transition-colors" />
+                        <MapPin className="w-5 h-5 text-eythor-blue/70 group-hover/input:text-eythor-blue transition-colors z-10" />
                         <input 
                           type="text" 
                           name="state" 
-                          placeholder="State" 
+                          placeholder="State / Region" 
                           value={formData.state} 
                           onChange={handleInputChange} 
-                          className="bg-transparent text-white placeholder:text-white/40 text-sm w-full outline-none" 
+                          className="bg-transparent text-white placeholder:text-white/40 text-sm w-full outline-none relative z-10" 
                         />
                       </div>
                     </div>
