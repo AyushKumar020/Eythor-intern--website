@@ -197,7 +197,43 @@ const SolarPanelModelInput: React.FC<SolarPanelModelInputProps> = ({ onSelect, s
             title: 'Model Extracted',
             description: `Found: "${modelSearch}"`,
           });
-          handleSearchInput(modelSearch);
+          setManualModel(modelSearch);
+          
+          // Immediately search and auto-select if single match
+          setIsSearching(true);
+          try {
+            const results = await searchPanelsByModel(modelSearch);
+            setSearchResults(results);
+            setShowResults(results.length > 0);
+            
+            if (results.length === 1) {
+              // Auto-select the single match
+              setShowResults(false);
+              onSelect(results[0]);
+              toast({
+                title: 'Panel Identified!',
+                description: `Auto-detected: ${results[0].model}`,
+              });
+            } else if (results.length > 1) {
+              setShowResults(true);
+              toast({
+                title: 'Multiple Matches',
+                description: `Found ${results.length} panels. Please select the correct one.`,
+              });
+            } else {
+              toast({
+                title: 'Model Not Found in Database',
+                description: `No exact match for "${modelSearch}". Try a different search.`,
+                variant: 'destructive',
+              });
+            }
+          } catch (err) {
+            console.error('Search error after OCR:', err);
+            setSearchResults([]);
+            setShowResults(false);
+          } finally {
+            setIsSearching(false);
+          }
         } else {
           toast({
             title: 'Could Not Extract Model',

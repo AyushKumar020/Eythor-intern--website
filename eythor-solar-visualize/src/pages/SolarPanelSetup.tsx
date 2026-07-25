@@ -1,4 +1,6 @@
 import React, { useState, useRef } from 'react';
+import { getCustomerInfo } from '@/utils/localStorage';
+import { submitToGoogleSheets, fileToBase64 } from '@/utils/submitToGoogleSheets';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -241,11 +243,82 @@ const SolarPanelSetup = () => {
     setStep(newStep);
   };
 
-  const handleConfirmAndSubmit = () => {
-    toast({
-      title: 'Information Submitted!',
-      description: 'Thank you! Our team will review your details and contact you shortly with a customized quote.',
+  const handleConfirmAndSubmit = async () => {
+    // Get customer info from localStorage
+    const customer = getCustomerInfo();
+    if (!customer) {
+      toast({
+        title: 'Customer Info Missing',
+        description: 'Please start from the Buy Now page first.',
+        variant: 'destructive',
+      });
+      navigate('/buynow');
+      return;
+    }
+
+    // Convert all uploaded images to base64
+    const allImages: { label: string; dataUrl: string; tableNumber: number }[] = [];
+    for (const table of completedTables) {
+      for (const img of table.images) {
+        try {
+          const dataUrl = await fileToBase64(img.file);
+          allImages.push({ label: `${img.label}`, dataUrl, tableNumber: table.tableNumber });
+        } catch (err) {
+          console.error('Failed to convert image to base64:', err);
+        }
+      }
+    }
+
+    // Build tables data with panel specs
+    const tables = completedTables.map(table => {
+      const panel = table.solarPanel;
+      return {
+        tableNumber: table.tableNumber,
+        rows: table.rows,
+        columns: table.columns,
+        panels: table.panels,
+        panelModel: panel?.model || '',
+        ratedPower: panel?.ratedPower ? `${panel.ratedPower} W` : '',
+        panelLength: panel?.length ? `${panel.length} mm` : '',
+        panelWidth: panel?.width ? `${panel.width} mm` : '',
+      };
     });
+
+    // Submit to Google Sheets (with images)
+    const result = await submitToGoogleSheets({
+      customer: {
+        name: customer.name,
+        phone: customer.phone,
+        email: customer.email,
+        address: customer.address,
+        pincode: customer.pincode,
+        kilowatts: customer.kilowatts || '',
+        houseNumber: customer.houseNumber || '',
+        streetAddress: customer.streetAddress || '',
+        city: customer.city || '',
+        state: customer.state || '',
+        purpose: customer.purpose || '',
+        action: (customer as any).action || 'self-setup',
+      },
+      tables,
+      totalPanels,
+      images: allImages,
+    });
+
+    if (result.success) {
+      toast({
+        title: 'Information Submitted!',
+        description: 'Thank you! Our team will review your details and contact you shortly with a customized quote.',
+      });
+    } else {
+      toast({
+        title: 'Submission Failed',
+        description: result.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setTimeout(() => {
       navigate('/');
     }, 2000);

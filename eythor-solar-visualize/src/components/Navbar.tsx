@@ -12,7 +12,7 @@ const navLinks: NavLink[] = [
   { name: 'Home', href: '/' },
   { name: 'About', href: '/about' },
   { name: 'Product', href: '/product' },
-  { name: 'Buy Now', href: '/quote' },
+  { name: 'Buy Now', href: '/buynow' },
   { name: 'Career', href: 'https://forms.gle/exampleGoogleFormLink', external: true },
   { name: 'Contact Us', href: '/contact' },
 ];

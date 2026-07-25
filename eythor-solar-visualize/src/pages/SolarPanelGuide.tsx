@@ -512,7 +512,7 @@ const SolarPanelGuide = () => {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => navigate('/quote')}
+                onClick={() => navigate('/buynow')}
                 className="ml-3 border-white/10 text-white/70 hover:text-white hover:bg-white/5 gap-2"
                 size="lg"
               >

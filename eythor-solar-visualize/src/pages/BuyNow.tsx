@@ -1,8 +1,10 @@
 import React from 'react';
+import { saveCustomerInfo, getCustomerInfo } from '@/utils/localStorage';
+import { submitToGoogleSheets } from '@/utils/submitToGoogleSheets';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, ArrowRight, Home, Sun, Building2, CheckCircle, Phone, User, Mail, Clock, MapPin, MapPinned } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Home, Sun, Building2, CheckCircle, Phone, User, Mail, Clock, MapPin, MapPinned, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import VideoBackground from '@/components/VideoBackground';
@@ -14,13 +16,17 @@ const BuyNowPage = () => {
   const [showHouseholdActions, setShowHouseholdActions] = React.useState(false);
   const [showContactMessage, setShowContactMessage] = React.useState(false);
   const [contactType, setContactType] = React.useState<'engineer' | 'self' | null>(null);
-  const [showCustomerForm, setShowCustomerForm] = React.useState(false);
+  const [showCustomerForm, setShowCustomerForm] = React.useState(true);
   const [customerInfo, setCustomerInfo] = React.useState({
     name: '',
-    phone: '',
     email: '',
-    address: '',
+    phone: '',
+    kilowatts: '',
+    houseNumber: '',
     pincode: '',
+    streetAddress: '',
+    city: '',
+    state: '',
   });
   const [pincodeError, setPincodeError] = React.useState('');
 
@@ -30,18 +36,30 @@ const BuyNowPage = () => {
     { value: 'solar-farm', label: 'Solar Parks', icon: Sun },
   ];
 
-  const handlePincodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    // Only allow digits and max 6 characters
-    if (/^\d*$/.test(value) && value.length <= 6) {
-      setCustomerInfo(prev => ({ ...prev, pincode: value }));
-      if (value.length === 6) {
-        setPincodeError('');
-      } else if (value.length > 0 && value.length < 6) {
-        setPincodeError('Pincode must be 6 digits');
-      } else {
-        setPincodeError('');
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    if (name === 'phone') {
+      if (/^\d*$/.test(value) && value.length <= 10) {
+        setCustomerInfo(prev => ({ ...prev, phone: value }));
       }
+    } else if (name === 'kilowatts') {
+      if (/^\d*$/.test(value)) {
+        setCustomerInfo(prev => ({ ...prev, kilowatts: value }));
+      }
+    } else if (name === 'pincode') {
+      if (/^\d*$/.test(value) && value.length <= 6) {
+        setCustomerInfo(prev => ({ ...prev, pincode: value }));
+        if (value.length === 6) {
+          setPincodeError('');
+        } else if (value.length > 0 && value.length < 6) {
+          setPincodeError('Pincode must be 6 digits');
+        } else {
+          setPincodeError('');
+        }
+      }
+    } else {
+      setCustomerInfo(prev => ({ ...prev, [name]: value }));
     }
   };
 
@@ -51,16 +69,58 @@ const BuyNowPage = () => {
       setPincodeError('Pincode must be exactly 6 digits');
       return;
     }
+    // Save customer info immediately when form is submitted
+    saveCustomerInfo({
+      name: customerInfo.name,
+      phone: customerInfo.phone,
+      email: customerInfo.email,
+      address: `${customerInfo.houseNumber}, ${customerInfo.streetAddress}, ${customerInfo.city}, ${customerInfo.state}`,
+      pincode: customerInfo.pincode,
+      purpose: '',
+      kilowatts: customerInfo.kilowatts,
+      houseNumber: customerInfo.houseNumber,
+      streetAddress: customerInfo.streetAddress,
+      city: customerInfo.city,
+      state: customerInfo.state,
+      action: '',
+    });
     setShowCustomerForm(false);
+  };
+
+  const doSubmitToSheets = (purpose: string, action: string) => {
+    saveCustomerInfo({ purpose, action });
+    const customer = getCustomerInfo();
+    if (customer) {
+      submitToGoogleSheets({
+        customer: {
+          name: customer.name,
+          phone: customer.phone,
+          email: customer.email,
+          address: customer.address,
+          pincode: customer.pincode,
+          kilowatts: customer.kilowatts || '',
+          houseNumber: customer.houseNumber || '',
+          streetAddress: customer.streetAddress || '',
+          city: customer.city || '',
+          state: customer.state || '',
+          purpose: purpose,
+          action: action,
+        },
+        totalPanels: 0,
+        tables: [],
+        images: [],
+      });
+    }
   };
 
   const handleContinue = () => {
     if (!selectedPurpose) return;
-
     if (selectedPurpose === 'household') {
+      saveCustomerInfo({ purpose: 'household' });
       setShowHouseholdActions(true);
       setShowContactMessage(false);
     } else {
+      doSubmitToSheets(selectedPurpose, 'contact-me');
       setShowContactMessage(true);
       setShowHouseholdActions(false);
     }
@@ -80,10 +140,12 @@ const BuyNowPage = () => {
   };
 
   const handleEngineerCall = () => {
+    doSubmitToSheets('household', 'call-engineer');
     setContactType('engineer');
   };
 
   const handleSelfSetup = () => {
+    saveCustomerInfo({ action: 'self-setup' });
     setContactType('self');
     navigate('/solar-panel-setup');
   };
@@ -172,106 +234,144 @@ const BuyNowPage = () => {
                         </p>
                       </div>
 
+                      {/* Personal Information */}
                       <div className="space-y-5 mb-8">
-                        <div className="space-y-2">
-                          <Label className="text-white/80 text-sm font-medium flex items-center gap-2">
-                            <User className="w-4 h-4 text-eythor-blue" />
-                            Full Name *
-                          </Label>
-                          <Input
-                            type="text"
-                            placeholder="Enter your full name"
-                            value={customerInfo.name}
-                            onChange={(e) => setCustomerInfo(prev => ({ ...prev, name: e.target.value }))}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="group/input bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-3 hover:border-eythor-blue/50 hover:bg-white/10 transition-all duration-300">
+                            <User className="w-5 h-5 text-eythor-blue/70 group-hover/input:text-eythor-blue transition-colors flex-shrink-0" />
+                            <input 
+                              type="text" 
+                              name="name" 
+                              placeholder="Full Name" 
+                              value={customerInfo.name} 
+                              onChange={handleInputChange} 
+                              required
+                              className="bg-transparent text-white placeholder:text-white/40 text-base w-full outline-none"
+                            />
+                          </div>
+                          <div className="group/input bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-3 hover:border-eythor-blue/50 hover:bg-white/10 transition-all duration-300">
+                            <Mail className="w-5 h-5 text-eythor-blue/70 group-hover/input:text-eythor-blue transition-colors flex-shrink-0" />
+                            <input 
+                              type="email" 
+                              name="email" 
+                              placeholder="Email ID" 
+                              value={customerInfo.email} 
+                              onChange={handleInputChange} 
+                              required
+                              className="bg-transparent text-white placeholder:text-white/40 text-base w-full outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="group/input bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-3 hover:border-eythor-blue/50 hover:bg-white/10 transition-all duration-300">
+                            <Phone className="w-5 h-5 text-eythor-blue/70 group-hover/input:text-eythor-blue transition-colors flex-shrink-0" />
+                            <input 
+                              type="tel" 
+                              name="phone" 
+                              placeholder="Phone Number" 
+                              value={customerInfo.phone} 
+                              onChange={handleInputChange} 
+                              required
+                              className="bg-transparent text-white placeholder:text-white/40 text-base w-full outline-none" 
+                            />
+                          </div>
+                          <div className="group/input bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-3 hover:border-eythor-blue/50 hover:bg-white/10 transition-all duration-300">
+                            <Zap className="w-5 h-5 text-eythor-blue/70 group-hover/input:text-eythor-blue transition-colors flex-shrink-0" />
+                            <input 
+                              type="text" 
+                              name="kilowatts" 
+                              placeholder="Kilowatts Required" 
+                              value={customerInfo.kilowatts} 
+                              onChange={handleInputChange} 
+                              className="bg-transparent text-white placeholder:text-white/40 text-base w-full outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="text-white/70 text-xs uppercase tracking-wider mb-3 mt-6 font-medium">
+                          Complete Installation Address
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="group/input bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-3 hover:border-eythor-blue/50 hover:bg-white/10 transition-all duration-300">
+                            <Home className="w-5 h-5 text-eythor-blue/70 group-hover/input:text-eythor-blue transition-colors flex-shrink-0" />
+                            <input 
+                              type="text" 
+                              name="houseNumber" 
+                              placeholder="House / Flat Number" 
+                              value={customerInfo.houseNumber} 
+                              onChange={handleInputChange} 
+                              required
+                              className="bg-transparent text-white placeholder:text-white/40 text-sm w-full outline-none" 
+                            />
+                          </div>
+                          <div className="group/input bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-3 hover:border-eythor-blue/50 hover:bg-white/10 transition-all duration-300">
+                            <MapPinned className="w-5 h-5 text-eythor-blue/70 group-hover/input:text-eythor-blue transition-colors flex-shrink-0" />
+                            <input 
+                              type="text" 
+                              name="pincode" 
+                              placeholder="6-Digit Pin Code" 
+                              value={customerInfo.pincode} 
+                              onChange={handleInputChange} 
+                              maxLength={6} 
+                              required
+                              className={`bg-transparent text-white placeholder:text-white/40 text-sm w-full outline-none ${pincodeError ? 'text-red-400' : ''}`} 
+                            />
+                          </div>
+                        </div>
+                        {pincodeError && (
+                          <p className="text-red-400 text-xs mt-1 px-1">{pincodeError}</p>
+                        )}
+
+                        <div className="group/input bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-3 hover:border-eythor-blue/50 hover:bg-white/10 transition-all duration-300">
+                          <MapPin className="w-5 h-5 text-eythor-blue/70 group-hover/input:text-eythor-blue transition-colors flex-shrink-0" />
+                          <input 
+                            type="text" 
+                            name="streetAddress" 
+                            placeholder="Complete Street Address" 
+                            value={customerInfo.streetAddress} 
+                            onChange={handleInputChange} 
                             required
-                            className="bg-white/[0.03] border-white/10 text-white placeholder:text-white/30 
-                                       focus:border-eythor-blue/50 focus:ring-1 focus:ring-eythor-blue/20 
-                                       transition-all duration-300 rounded-lg h-11 hover:border-white/20"
+                            className="bg-transparent text-white placeholder:text-white/40 text-sm w-full outline-none" 
                           />
                         </div>
 
-                        <div className="space-y-2">
-                          <Label className="text-white/80 text-sm font-medium flex items-center gap-2">
-                            <Phone className="w-4 h-4 text-eythor-blue" />
-                            Phone Number *
-                          </Label>
-                          <Input
-                            type="tel"
-                            placeholder="Enter your phone number"
-                            value={customerInfo.phone}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (/^\d*$/.test(value) && value.length <= 10) {
-                                setCustomerInfo(prev => ({ ...prev, phone: value }));
-                              }
-                            }}
-                            required
-                            className="bg-white/[0.03] border-white/10 text-white placeholder:text-white/30 
-                                       focus:border-eythor-blue/50 focus:ring-1 focus:ring-eythor-blue/20 
-                                       transition-all duration-300 rounded-lg h-11 hover:border-white/20"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label className="text-white/80 text-sm font-medium flex items-center gap-2">
-                            <Mail className="w-4 h-4 text-eythor-blue" />
-                            Email Address *
-                          </Label>
-                          <Input
-                            type="email"
-                            placeholder="Enter your email address"
-                            value={customerInfo.email}
-                            onChange={(e) => setCustomerInfo(prev => ({ ...prev, email: e.target.value }))}
-                            required
-                            className="bg-white/[0.03] border-white/10 text-white placeholder:text-white/30 
-                                       focus:border-eythor-blue/50 focus:ring-1 focus:ring-eythor-blue/20 
-                                       transition-all duration-300 rounded-lg h-11 hover:border-white/20"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label className="text-white/80 text-sm font-medium flex items-center gap-2">
-                            <MapPin className="w-4 h-4 text-eythor-blue" />
-                            Address *
-                          </Label>
-                          <Input
-                            type="text"
-                            placeholder="Enter your address"
-                            value={customerInfo.address}
-                            onChange={(e) => setCustomerInfo(prev => ({ ...prev, address: e.target.value }))}
-                            required
-                            className="bg-white/[0.03] border-white/10 text-white placeholder:text-white/30 
-                                       focus:border-eythor-blue/50 focus:ring-1 focus:ring-eythor-blue/20 
-                                       transition-all duration-300 rounded-lg h-11 hover:border-white/20"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label className="text-white/80 text-sm font-medium flex items-center gap-2">
-                            <MapPinned className="w-4 h-4 text-eythor-blue" />
-                            Pin Code *
-                          </Label>
-                          <Input
-                            type="text"
-                            inputMode="numeric"
-                            placeholder="Enter 6-digit pin code"
-                            value={customerInfo.pincode}
-                            onChange={handlePincodeChange}
-                            maxLength={6}
-                            required
-                            className={`bg-white/[0.03] border-white/10 text-white placeholder:text-white/30 
-                                       focus:border-eythor-blue/50 focus:ring-1 focus:ring-eythor-blue/20 
-                                       transition-all duration-300 rounded-lg h-11 hover:border-white/20
-                                       ${pincodeError ? 'border-red-500 focus:border-red-500' : ''}`}
-                          />
-                          {pincodeError && (
-                            <p className="text-red-400 text-xs mt-1">{pincodeError}</p>
-                          )}
-                          <p className="text-white/30 text-xs mt-1">Enter exactly 6 digits (numbers only)</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="group/input bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-3 hover:border-eythor-blue/50 hover:bg-white/10 transition-all duration-300">
+                            <MapPin className="w-5 h-5 text-eythor-blue/70 group-hover/input:text-eythor-blue transition-colors flex-shrink-0" />
+                            <input 
+                              type="text" 
+                              name="city" 
+                              placeholder="City / Town" 
+                              value={customerInfo.city} 
+                              onChange={handleInputChange} 
+                              required
+                              className="bg-transparent text-white placeholder:text-white/40 text-sm w-full outline-none" 
+                            />
+                          </div>
+                          <div className="group/input bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-3 hover:border-eythor-blue/50 hover:bg-white/10 transition-all duration-300">
+                            <MapPin className="w-5 h-5 text-eythor-blue/70 group-hover/input:text-eythor-blue transition-colors flex-shrink-0" />
+                            <input 
+                              type="text" 
+                              name="state" 
+                              placeholder="State / Region" 
+                              value={customerInfo.state} 
+                              onChange={handleInputChange} 
+                              required
+                              className="bg-transparent text-white placeholder:text-white/40 text-sm w-full outline-none" 
+                            />
+                          </div>
                         </div>
                       </div>
 
-                      <div className="flex justify-between items-center">
+                      <div className="mt-6 p-4 bg-eythor-blue/5 border border-eythor-blue/10 rounded-xl">
+                        <p className="text-white/70 text-xs text-center">
+                          Your information is secure and will only be used to provide you with the best quote.
+                        </p>
+                      </div>
+
+                      <div className="flex justify-between items-center mt-6">
                         <Button 
                           type="button"
                           onClick={handleBack}
@@ -296,7 +396,6 @@ const BuyNowPage = () => {
                   {/* Purpose Selection - Show when no action taken yet */}
                   {!showCustomerForm && !showHouseholdActions && !showContactMessage && (
                     <>
-                      {/* Header */}
                       <div className="text-center mb-8">
                         <h1 className="text-4xl md:text-5xl font-bold mb-4">
                           <span className="text-gradient-blue">What's your Purpose?</span>
@@ -306,7 +405,6 @@ const BuyNowPage = () => {
                         </p>
                       </div>
 
-                      {/* Purpose Selection Cards */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
                         {purposeOptions.map((option) => {
                           const Icon = option.icon;
@@ -334,13 +432,9 @@ const BuyNowPage = () => {
                               )}
                               
                               <div className={`w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 transition-all duration-300 ${
-                                isSelected
-                                  ? 'bg-white/10'
-                                  : 'bg-white/5'
+                                isSelected ? 'bg-white/10' : 'bg-white/5'
                               }`}>
-                                <Icon className={`w-8 h-8 ${
-                                  isSelected ? 'text-white' : 'text-white/70'
-                                }`} />
+                                <Icon className={`w-8 h-8 ${isSelected ? 'text-white' : 'text-white/70'}`} />
                               </div>
                               
                               <h3 className="text-white font-semibold text-base">
@@ -351,7 +445,6 @@ const BuyNowPage = () => {
                         })}
                       </div>
 
-                      {/* Navigation Buttons */}
                       <div className="flex justify-between items-center">
                         <Button 
                           onClick={handleBack}
@@ -374,7 +467,7 @@ const BuyNowPage = () => {
                     </>
                   )}
 
-                  {/* Household Actions - Ask if user wants to call engineer or self-setup */}
+                  {/* Household Actions */}
                   {showHouseholdActions && (
                     <div className="animate-slide-in-right">
                       <div className="text-center mb-8">
@@ -390,7 +483,6 @@ const BuyNowPage = () => {
                       </div>
 
                       <div className="space-y-4 mb-8">
-                        {/* Option 1: Call an Engineer */}
                         <button
                           onClick={handleEngineerCall}
                           className="w-full p-6 rounded-xl border-2 border-white/10 bg-white/[0.02] hover:border-eythor-blue/40 hover:bg-eythor-blue/5 transition-all duration-300 text-left group"
@@ -408,7 +500,6 @@ const BuyNowPage = () => {
                           </div>
                         </button>
 
-                        {/* Option 2: Enter Details Myself */}
                         <button
                           onClick={handleSelfSetup}
                           className="w-full p-6 rounded-xl border-2 border-white/10 bg-white/[0.02] hover:border-eythor-blue/40 hover:bg-eythor-blue/5 transition-all duration-300 text-left group"
@@ -427,7 +518,6 @@ const BuyNowPage = () => {
                         </button>
                       </div>
 
-                      {/* Engineer Call Confirmation */}
                       {contactType === 'engineer' && (
                         <div className="mb-6 p-6 bg-eythor-blue/5 border border-eythor-blue/10 rounded-xl">
                           <div className="flex items-center gap-3 mb-3">

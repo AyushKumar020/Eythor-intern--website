@@ -39,7 +39,7 @@ const SolarQuote = () => {
 
   const isFormValid = () => {
     return formData.name && formData.email && formData.phone && 
-           formData.pinCode && formData.houseNumber && formData.streetAddress && formData.city && formData.state;
+           formData.pinCode && formData.pinCode.length === 6 && formData.houseNumber && formData.streetAddress && formData.city && formData.state;
   };
 
   return (
