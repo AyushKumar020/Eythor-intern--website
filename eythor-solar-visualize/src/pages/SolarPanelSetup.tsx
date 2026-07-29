@@ -467,7 +467,7 @@ const SolarPanelSetup = () => {
                                 Array.from({ length: parsedCols }).map((_, ci) => (
                                   <div
                                     key={`${ri}-${ci}`}
-                                    className="w-2 h-3.5 sm:w-2.5 sm:h-4 transition-all duration-200 bg-eythor-blue/60 shadow-[0_0_10px_rgba(59,130,246,0.7)]"
+                                    className="w-2 h-3.5 sm:w-2.5 sm:h-4 transition-all duration-200 bg-eythor-blue/40 shadow-[0_0_4px_rgba(59,130,246,0.3)]"
                                     title={`Row ${ri + 1}, Col ${ci + 1}`}
                                   />
                                 ))
