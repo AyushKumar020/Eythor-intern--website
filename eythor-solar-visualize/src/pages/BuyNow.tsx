@@ -29,6 +29,7 @@ const BuyNowPage = () => {
     state: '',
   });
   const [pincodeError, setPincodeError] = React.useState('');
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const purposeOptions = [
     { value: 'household', label: 'Household', icon: Home },
@@ -114,12 +115,13 @@ const BuyNowPage = () => {
   };
 
   const handleContinue = () => {
-    if (!selectedPurpose) return;
+    if (!selectedPurpose || isSubmitting) return;
     if (selectedPurpose === 'household') {
       saveCustomerInfo({ purpose: 'household' });
       setShowHouseholdActions(true);
       setShowContactMessage(false);
     } else {
+      setIsSubmitting(true);
       doSubmitToSheets(selectedPurpose, 'contact-me');
       setShowContactMessage(true);
       setShowHouseholdActions(false);
@@ -140,6 +142,8 @@ const BuyNowPage = () => {
   };
 
   const handleEngineerCall = () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     doSubmitToSheets('household', 'call-engineer');
     setContactType('engineer');
   };

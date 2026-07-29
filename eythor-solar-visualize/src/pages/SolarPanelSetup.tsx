@@ -46,6 +46,8 @@ const SolarPanelSetup = () => {
   const selectedAngleRef = useRef<string>('Top View');
   const [totalPanels, setTotalPanels] = useState(0);
   const [selectedPanel, setSelectedPanel] = useState<SolarPanel | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const generateGridPreview = (r: number, c: number): boolean[][] => {
@@ -113,7 +115,6 @@ const SolarPanelSetup = () => {
 
     const angle = selectedAngleRef.current;
     
-    // Check if this exact file is already uploaded for this angle
     const existingForAngle = uploadedImages.filter(img => img.label === angle);
     const isDuplicate = existingForAngle.some(img => img.file.name === file.name && img.file.size === file.size);
     
@@ -126,7 +127,6 @@ const SolarPanelSetup = () => {
       return;
     }
     
-    // Remove any existing image for this angle and replace with new one
     const filtered = uploadedImages.filter(img => img.label !== angle);
     
     const newImage: UploadedImage = {
@@ -244,7 +244,9 @@ const SolarPanelSetup = () => {
   };
 
   const handleConfirmAndSubmit = async () => {
-    // Get customer info from localStorage
+    if (submitting) return;
+    setSubmitting(true);
+
     const customer = getCustomerInfo();
     if (!customer) {
       toast({
@@ -256,7 +258,6 @@ const SolarPanelSetup = () => {
       return;
     }
 
-    // Convert all uploaded images to base64
     const allImages: { label: string; dataUrl: string; tableNumber: number }[] = [];
     for (const table of completedTables) {
       for (const img of table.images) {
@@ -269,7 +270,6 @@ const SolarPanelSetup = () => {
       }
     }
 
-    // Build tables data with panel specs
     const tables = completedTables.map(table => {
       const panel = table.solarPanel;
       return {
@@ -284,7 +284,6 @@ const SolarPanelSetup = () => {
       };
     });
 
-    // Submit to Google Sheets (with images)
     const result = await submitToGoogleSheets({
       customer: {
         name: customer.name,
@@ -306,11 +305,14 @@ const SolarPanelSetup = () => {
     });
 
     if (result.success) {
+      setSubmitSuccess(true);
       toast({
         title: 'Information Submitted!',
         description: 'Thank you! Our team will review your details and contact you shortly with a customized quote.',
       });
     } else {
+      setSubmitting(false);
+      setSubmitSuccess(false);
       toast({
         title: 'Submission Failed',
         description: result.message,
@@ -342,7 +344,6 @@ const SolarPanelSetup = () => {
           <img src="/background image buy now page.jpeg" alt="Background" className="w-full h-full object-cover opacity-50" />
         </div>
         
-        {/* Decorative tech shapes */}
         <div className="absolute top-40 left-10 w-72 h-72 bg-eythor-blue/5 rounded-full blur-[100px] animate-pulse pointer-events-none z-[1]"></div>
         <div className="absolute bottom-40 right-10 w-96 h-96 bg-white/[0.02] rounded-full blur-[120px] animate-pulse pointer-events-none z-[1]" style={{ animationDelay: '1s' }}></div>
 
@@ -393,18 +394,15 @@ const SolarPanelSetup = () => {
             </div>
 
             <div className="relative group">
-              {/* Glow effect behind card */}
               <div className="absolute -inset-1 bg-gradient-to-r from-eythor-blue/20 via-transparent to-eythor-blue/10 rounded-2xl blur-md opacity-50 group-hover:opacity-100 transition-opacity duration-500"></div>
               
                 <div className="relative bg-black/70 backdrop-blur-xl border border-white/10 rounded-2xl p-8 md:p-10 shadow-2xl">
-                {/* Subtle gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-br from-eythor-blue/[0.02] to-transparent rounded-2xl pointer-events-none"></div>
                  
                 <div className="relative z-10">
                   <div className={slideDirection === 'right' ? 'animate-slide-in-right' : 'animate-slide-in-left'}>
                     {step === 1 && (
                       <form onSubmit={handleTableConfigSubmit} className="space-y-6">
-                        {/* Top row: Heading left, How to use button and panel count right */}
                         <div className="mb-2">
                           <div className="flex items-start justify-between">
                             <div className="flex flex-col gap-3">
@@ -449,17 +447,17 @@ const SolarPanelSetup = () => {
                           </div>
                         </div>
 
-                        <div className="bg-white/[0.02] border border-white/10 rounded-xl p-4">
-                          <div className="text-center mb-3">
+                        <div className="bg-white/[0.02] border border-white/10 rounded-xl p-6">
+                          <div className="text-center mb-4">
                             <span className="text-xs text-white/40">
                               {parsedRows > 0 && parsedCols > 0
                                 ? `Preview: ${parsedRows} row${parsedRows > 1 ? 's' : ''} × ${parsedCols} column${parsedCols > 1 ? 's' : ''}`
                                 : 'Enter dimensions to see preview'}
                             </span>
                           </div>
-                          <div className="overflow-x-auto">
+                          <div className="overflow-x-auto py-2">
                             <div
-                              className="grid gap-1 mx-auto"
+                              className="grid gap-x-1.5 gap-y-3 mx-auto"
                               style={{
                                 gridTemplateColumns: `repeat(${Math.max(parsedCols, 1)}, minmax(0, 1fr))`,
                                 width: 'fit-content',
@@ -469,7 +467,7 @@ const SolarPanelSetup = () => {
                                 Array.from({ length: parsedCols }).map((_, ci) => (
                                   <div
                                     key={`${ri}-${ci}`}
-                                    className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-sm transition-all duration-200 bg-eythor-blue/60 shadow-[0_0_8px_rgba(59,130,246,0.5)]"
+                                    className="w-2 h-3.5 sm:w-2.5 sm:h-4 transition-all duration-200 bg-eythor-blue/60 shadow-[0_0_10px_rgba(59,130,246,0.7)]"
                                     title={`Row ${ri + 1}, Col ${ci + 1}`}
                                   />
                                 ))
@@ -547,7 +545,6 @@ const SolarPanelSetup = () => {
 
                     {step === 2 && (
                       <div className="space-y-6">
-                        {/* Top row: Heading left, How to use button right */}
                         <div className="flex items-start justify-between mb-2">
                           <div>
                             <h2 className="text-3xl md:text-4xl font-bold">
@@ -567,7 +564,6 @@ const SolarPanelSetup = () => {
                           </button>
                         </div>
 
-                        {/* Table badge and Photos icon just below heading */}
                         <div className="flex items-center gap-2">
                           {renderTableBadge()}
                           <div className="inline-flex items-center gap-2 px-3 py-1 bg-eythor-blue/10 rounded-full">
@@ -582,7 +578,6 @@ const SolarPanelSetup = () => {
                           </div>
                         </div>
 
-                        {/* 4 Upload Boxes - matching screenshot format */}
                         <div className="grid grid-cols-2 gap-4">
                           {[
                             { 
@@ -747,7 +742,6 @@ const SolarPanelSetup = () => {
                           })}
                         </div>
 
-                        {/* Hidden file input for all uploads */}
                         <input
                           ref={fileInputRef}
                           type="file"
@@ -757,7 +751,6 @@ const SolarPanelSetup = () => {
                           className="hidden"
                         />
 
-                        {/* Uploaded photos count summary */}
                         {uploadedImages.length > 0 && (
                           <div className="flex items-center justify-between px-1">
                             <span className="text-xs text-white/50">{uploadedImages.length} photo(s) uploaded</span>
@@ -801,7 +794,6 @@ const SolarPanelSetup = () => {
 
                     {step === 3 && (
                       <div className="space-y-6">
-                        {/* Top row: Heading left, How to use button right */}
                         <div className="flex items-start justify-between mb-2">
                           <div>
                             <h2 className="text-3xl md:text-4xl font-bold">
@@ -821,7 +813,6 @@ const SolarPanelSetup = () => {
                           </button>
                         </div>
 
-                        {/* Table badge and Model Identification icon just below heading */}
                         <div className="flex items-center gap-2">
                           {renderTableBadge()}
                           <div className="inline-flex items-center gap-2 px-3 py-1 bg-eythor-blue/10 rounded-full">
@@ -898,7 +889,7 @@ const SolarPanelSetup = () => {
                       </div>
                     )}
 
-                    {step === 4 && (
+                    {step === 4 && !submitting && (
                       <div className="space-y-6">
                         <div className="text-center mb-4">
                           <div className="mx-auto w-16 h-16 bg-gradient-to-br from-eythor-blue/20 to-eythor-blue/5 rounded-full flex items-center justify-center mb-4">
@@ -1029,6 +1020,7 @@ const SolarPanelSetup = () => {
                             type="button"
                             variant="outline"
                             onClick={handleBackToAddAnother}
+                            disabled={submitting}
                             className="border-white/10 text-white/70 hover:text-white hover:bg-white/5 gap-2 transition-all duration-300"
                           >
                             <ArrowLeft className="w-4 h-4" />
@@ -1037,12 +1029,55 @@ const SolarPanelSetup = () => {
                           <Button
                             type="button"
                             onClick={handleConfirmAndSubmit}
+                            disabled={submitting}
                             className="cta-button group gap-2 relative overflow-hidden"
                           >
                             <span className="relative z-10">Confirm & Submit</span>
                             <CheckCircle className="w-4 h-4 relative z-10" />
                           </Button>
                         </div>
+                      </div>
+                    )}
+
+                    {(step === 4 && submitting) && (
+                      <div className="flex flex-col items-center justify-center py-16 space-y-8 animate-fade-in">
+                        {!submitSuccess ? (
+                          <>
+                            <div className="relative">
+                              <div className="w-20 h-20 border-4 border-eythor-blue/20 border-t-eythor-blue rounded-full animate-spin"></div>
+                            </div>
+                            <div className="text-center">
+                              <h2 className="text-2xl md:text-3xl font-bold mb-3">
+                                <span className="text-gradient-blue">Submitting Your Information</span>
+                              </h2>
+                              <p className="text-white/60 text-sm">
+                                Please wait while we process your solar panel setup details...
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 text-white/40 text-xs">
+                              <div className="w-2 h-2 bg-eythor-blue rounded-full animate-pulse"></div>
+                              <span>This may take a few moments</span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-20 h-20 bg-gradient-to-br from-green-400/20 to-green-500/5 rounded-full flex items-center justify-center">
+                              <CheckCircle className="h-10 w-10 text-green-400" />
+                            </div>
+                            <div className="text-center">
+                              <h2 className="text-2xl md:text-3xl font-bold mb-3">
+                                <span className="text-gradient-blue">Information Submitted Successfully!</span>
+                              </h2>
+                              <p className="text-white/60 text-sm max-w-md mx-auto">
+                                Thank you! Our team will review your details and contact you shortly with a customized quote.
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 text-white/40 text-xs">
+                              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                              <span>Redirecting to home page...</span>
+                            </div>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
